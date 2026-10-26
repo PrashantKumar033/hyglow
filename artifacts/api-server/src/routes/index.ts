@@ -1,0 +1,43 @@
+import { Router, type IRouter } from "express";
+import healthRouter from "./health.js";
+import authRouter from "./auth.js";
+import dashboardRouter from "./dashboard.js";
+import ledgerRouter from "./ledger.js";
+import hrRouter from "./hr.js";
+import salesRouter from "./sales.js";
+import productsRouter from "./products.js";
+import inventoryRouter from "./inventory.js";
+import ordersRouter from "./orders.js";
+import invoicesRouter from "./invoices.js";
+import expensesRouter from "./expenses.js";
+import logisticsRouter from "./logistics.js";
+import reportsRouter from "./reports.js";
+import notificationsRouter from "./notifications.js";
+import messagesRouter from "./messages.js";
+import supportRouter from "./support.js";
+import adminRouter from "./admin.js";
+import profileRouter from "./profile.js";
+
+const router: IRouter = Router();
+
+router.use(healthRouter);
+router.use("/auth", authRouter);
+router.use("/dashboard", dashboardRouter);
+router.use("/ledger", ledgerRouter);
+router.use("/employees", hrRouter);
+router.use("/hr", hrRouter);
+router.use("/sales", salesRouter);
+router.use("/products", productsRouter);
+router.use("/inventory", inventoryRouter);
+router.use(ordersRouter);
+router.use("/invoices", invoicesRouter);
+router.use("/expenses", expensesRouter);
+router.use(logisticsRouter);
+router.use("/reports", reportsRouter);
+router.use("/notifications", notificationsRouter);
+router.use("/messages", messagesRouter);
+router.use("/support", supportRouter);
+router.use("/admin", adminRouter);
+router.use("/profile", profileRouter);
+
+export default router;
