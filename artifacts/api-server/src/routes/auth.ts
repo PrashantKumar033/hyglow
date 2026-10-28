@@ -1,26 +1,96 @@
 import { Router } from "express";
-import { db, usersTable } from "@workspace/db";
+import { db } from "@workspace/db";
+import { usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { z } from "zod";
+// import { z } from "zod";
+import * as crypto from "crypto";
 import { signToken, verifyToken } from "../lib/token.js";
-import { hashPassword, isLegacyPasswordHash, verifyPassword } from "../lib/password.js";
 
 const router = Router();
 
-const credentialsSchema = z.object({
-  email: z.string().trim().email().max(320),
-  password: z.string().min(1).max(128),
+function hashPassword(password: string): string {
+  return crypto.createHash("sha256").update(password).digest("hex");
+}
+
+export function getUserIdFromToken(token: string): number | null {
+  return verifyToken(token);
+}
+
+router.post("/login", async (req, res) => {
+  const body = req.body as { email: string; password: string };
+  if (!body.email || !body.password) {
+    return res.status(400).json({ error: "Email and password required" });
+  }
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, body.email));
+  if (!user || user.passwordHash !== hashPassword(body.password)) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+  const token = signToken(user.id);
+  return res.json({
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      company: user.company,
+      avatar: user.avatar,
+      sidebarPermissions: user.sidebarPermissions ?? null,
+      createdAt: user.createdAt.toISOString(),
+    },
+  });
 });
 
-const signupSchema = z.object({
-  name: z.string().trim().min(1).max(120),
-  email: z.string().trim().email().max(320),
-  password: z.string().min(8).max(128),
-  company: z.string().trim().min(1).max(160),
+router.post("/signup", async (req, res) => {
+  // Public signup creates an ADMIN account, so keep it closed unless you opt in.
+  if (process.env.ALLOW_SIGNUP !== "true") {
+    return res.status(403).json({ error: "Signup is disabled" });
+  }
+  const body = req.body as { name: string; email: string; password: string; company: string };
+  if (!body.name || !body.email || !body.password || !body.company) {
+    return res.status(400).json({ error: "All fields required" });
+  }
+  const existing = await db.select().from(usersTable).where(eq(usersTable.email, body.email));
+  if (existing.length > 0) {
+    return res.status(400).json({ error: "Email already registered" });
+  }
+  const [user] = await db.insert(usersTable).values({
+    name: body.name,
+    email: body.email,
+    passwordHash: hashPassword(body.password),
+    role: "admin",
+    company: body.company,
+  }).returning();
+  const token = signToken(user.id);
+  return res.json({
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      company: user.company,
+      avatar: user.avatar,
+      sidebarPermissions: user.sidebarPermissions ?? null,
+      createdAt: user.createdAt.toISOString(),
+    },
+  });
 });
 
-function toPublicUser(user: typeof usersTable.$inferSelect) {
-  return {
+// Tokens are stateless: logging out = the browser deleting its copy.
+router.post("/logout", (_req, res) => {
+  return res.json({ success: true });
+});
+
+router.get("/me", async (req, res) => {
+  const auth = req.headers.authorization;
+  if (!auth) return res.status(401).json({ error: "Unauthorized" });
+  const token = auth.replace("Bearer ", "");
+  const userId = verifyToken(token);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+  if (!user) return res.status(404).json({ error: "User not found" });
+  return res.json({
     id: user.id,
     name: user.name,
     email: user.email,
@@ -29,77 +99,7 @@ function toPublicUser(user: typeof usersTable.$inferSelect) {
     avatar: user.avatar,
     sidebarPermissions: user.sidebarPermissions ?? null,
     createdAt: user.createdAt.toISOString(),
-  };
-}
-
-export function getUserIdFromToken(token: string): number | null {
-  return verifyToken(token);
-}
-
-router.post("/login", async (req, res) => {
-  const parsed = credentialsSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "Valid email and password are required" });
-  }
-
-  const email = parsed.data.email.toLowerCase();
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
-  if (!user || !verifyPassword(parsed.data.password, user.passwordHash)) {
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
-
-  // Upgrade old unsalted SHA-256 credentials on successful login.
-  if (isLegacyPasswordHash(user.passwordHash)) {
-    await db.update(usersTable)
-      .set({ passwordHash: hashPassword(parsed.data.password) })
-      .where(eq(usersTable.id, user.id));
-  }
-
-  return res.json({ token: signToken(user.id), user: toPublicUser(user) });
-});
-
-router.post("/signup", async (req, res) => {
-  if (process.env.ALLOW_SIGNUP !== "true") {
-    return res.status(403).json({ error: "Signup is disabled" });
-  }
-
-  const parsed = signupSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "Please provide valid signup details" });
-  }
-
-  const data = parsed.data;
-  const email = data.email.toLowerCase();
-  const [existingUser] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, email));
-  if (existingUser) {
-    return res.status(409).json({ error: "Email already registered" });
-  }
-
-  // Public registration must never grant administrative privileges.
-  const [user] = await db.insert(usersTable).values({
-    name: data.name,
-    email,
-    passwordHash: hashPassword(data.password),
-    role: "user",
-    company: data.company,
-  }).returning();
-
-  return res.status(201).json({ token: signToken(user.id), user: toPublicUser(user) });
-});
-
-router.post("/logout", (_req, res) => {
-  // Tokens are stateless; the client clears its local copy on logout.
-  return res.json({ success: true });
-});
-
-router.get("/me", async (req, res) => {
-  const token = req.headers.authorization?.replace(/^Bearer\s+/i, "");
-  const userId = token ? verifyToken(token) : null;
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-  if (!user) return res.status(404).json({ error: "User not found" });
-  return res.json(toPublicUser(user));
+  });
 });
 
 export default router;
