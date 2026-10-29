@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Sparkles } from "lucide-react";
 
-const signupEnabled = import.meta.env.VITE_ENABLE_SIGNUP === "true";
-
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -80,7 +78,7 @@ export default function Login() {
             <h2 className="text-2xl font-bold">Welcome back</h2>
             <p className="text-muted-foreground text-sm mt-1">
               Sign in to your account to continue.{" "}
-              {signupEnabled && <Link href="/signup" className="text-primary hover:underline font-medium">Create account</Link>}
+              <Link href="/signup" className="text-primary hover:underline font-medium">Create account</Link>
             </p>
           </div>
 
@@ -128,7 +126,6 @@ export default function Login() {
               ) : "Sign In"}
             </Button>
           </form>
-
         </div>
       </div>
     </div>

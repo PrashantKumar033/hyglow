@@ -7,5 +7,9 @@
     "directory": "./artifacts/hyglow/dist/public",
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
+  },
+  "vars": {
+    // Public URL of your Node API (no trailing slash), e.g. https://hyglow-api.onrender.com
+    "API_ORIGIN": "https://hyglow.onrender.com"
   }
 }

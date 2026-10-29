@@ -7,8 +7,6 @@ import {
   ChevronRight, Sparkles
 } from "lucide-react";
 
-const signupEnabled = import.meta.env.VITE_ENABLE_SIGNUP === "true";
-
 const features = [
   { icon: LayoutDashboard, title: "Smart Dashboard", desc: "Real-time KPIs, revenue charts, and quick-action shortcuts all in one view.", color: "from-teal-500 to-cyan-400" },
   { icon: IndianRupee, title: "Account Ledger", desc: "Track debits, credits, and balances with a full double-entry accounting system.", color: "from-blue-500 to-indigo-400" },
@@ -73,7 +71,7 @@ export default function LandingPage() {
         <div className="absolute top-40 right-1/4 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center">
-          <div className="flex flex-wrap items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 sm:px-4 py-1.5 text-center text-xs text-teal-400 font-medium mb-6 backdrop-blur-sm">
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs text-teal-400 font-medium mb-6 backdrop-blur-sm">
             <Zap className="w-3.5 h-3.5" />
             India's Modern Business ERP Platform
           </div>
@@ -92,9 +90,9 @@ export default function LandingPage() {
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
-            <Link href={signupEnabled ? "/signup" : "/login"}>
+            <Link href="/signup">
               <button className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-white font-bold px-8 py-3.5 rounded-full shadow-xl shadow-teal-500/30 transition-all duration-200 hover:scale-105 hover:shadow-teal-500/50 text-sm">
-                {signupEnabled ? "Get Started Free" : "Sign In"}
+                Get Started Free
                 <ChevronRight className="w-4 h-4" />
               </button>
             </Link>
@@ -107,7 +105,7 @@ export default function LandingPage() {
           </div>
 
           {/* Trust badges */}
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-slate-500">
+          <div className="mt-10 flex items-center gap-6 text-sm text-slate-500">
             <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-teal-500" /> No credit card</div>
             <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-teal-500" /> Free forever plan</div>
             <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-teal-500" /> GST-ready invoicing</div>
@@ -255,9 +253,9 @@ export default function LandingPage() {
             Join thousands of businesses managing everything with Hyglow. No setup fee. No hidden charges.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href={signupEnabled ? "/signup" : "/login"}>
+            <Link href="/signup">
               <button className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-white font-bold px-10 py-4 rounded-full shadow-2xl shadow-teal-500/30 transition-all duration-200 hover:scale-105 hover:shadow-teal-500/50 text-base">
-                {signupEnabled ? "Get Started Free" : "Sign In"}
+                Get Started Free
                 <ArrowRight className="w-5 h-5" />
               </button>
             </Link>

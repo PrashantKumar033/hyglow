@@ -1,31 +1,16 @@
-// Wrangler routes /api/* through this worker and serves the built SPA assets
-// for all other paths.
+// Runs only for /api/* (see run_worker_first in wrangler.jsonc).
+// Everything else is served straight from the built frontend.
 export default {
   async fetch(request, env) {
-    let apiOrigin;
-    try {
-      apiOrigin = new URL(env.API_ORIGIN);
-    } catch {
+    if (!env.API_ORIGIN || env.API_ORIGIN.includes("CHANGE-ME")) {
       return Response.json({ error: "API_ORIGIN is not configured" }, { status: 500 });
     }
-
-    if (
-      apiOrigin.protocol !== "https:" ||
-      apiOrigin.username ||
-      apiOrigin.password ||
-      apiOrigin.pathname !== "/" ||
-      apiOrigin.search ||
-      apiOrigin.hash
-    ) {
-      return Response.json({ error: "API_ORIGIN must be an HTTPS origin without a path" }, { status: 500 });
-    }
-
-    const requestUrl = new URL(request.url);
-    requestUrl.protocol = apiOrigin.protocol;
-    requestUrl.host = apiOrigin.host;
-
+    const target = new URL(env.API_ORIGIN);
+    const url = new URL(request.url);
+    url.protocol = target.protocol;
+    url.host = target.host;
     try {
-      return await fetch(new Request(requestUrl, request));
+      return await fetch(new Request(url, request));
     } catch {
       return Response.json({ error: "API unreachable" }, { status: 502 });
     }
