@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npx pnpm@10 install --frozen-lockfile",
+  "buildCommand": "PORT=3000 BASE_PATH=/ npx pnpm@10 --filter @workspace/hyglow run build",
+  "outputDirectory": "artifacts/hyglow/dist/public",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://hyglow.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
